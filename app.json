@@ -32,6 +32,7 @@
       "output": "single"
     },
     "plugins": [
+      "./plugins/withoutPushEntitlement",
       "expo-router",
       "expo-status-bar",
       "expo-font",
@@ -63,7 +64,9 @@
         "expo-media-library",
         {
           "savePhotosPermission": "Level90 saves share cards you create to your photo library.",
-          "granularPermissions": ["photo"]
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ]
     ],
