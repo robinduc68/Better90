@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Level90",
+    "slug": "level90",
+    "scheme": "level90",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#090A0C",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.level90.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Level90 uses the camera to take private progress photos.",
+        "NSPhotoLibraryUsageDescription": "Level90 lets you choose private progress photos from your library.",
+        "NSPhotoLibraryAddUsageDescription": "Level90 saves share cards you create to your photo library."
+      }
+    },
+    "android": {
+      "package": "com.level90.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#090A0C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#090A0C",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#B7F34A"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Level90 lets you choose private progress photos from your library.",
+          "cameraPermission": "Level90 uses the camera to take private progress photos."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Level90 saves share cards you create to your photo library.",
+          "granularPermissions": ["photo"]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

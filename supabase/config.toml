@@ -1,0 +1,22 @@
+# Minimal local config. Run `supabase init` to generate the full default config if needed.
+project_id = "level90"
+
+[db]
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+site_url = "level90://"
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+[storage]
+file_size_limit = "10MiB"
+
+[functions.delete-account]
+verify_jwt = true
