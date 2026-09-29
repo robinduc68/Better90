@@ -158,6 +158,8 @@ export interface SessionPR {
   kind: 'weight' | 'reps';
   weightKg: number;
   deltaKg: number | null;
+  /** For rep PRs: extra reps vs the previous best at that weight. */
+  deltaReps: number | null;
 }
 
 export interface SessionSummary {
@@ -196,9 +198,19 @@ export function summarizeSession(
         kind: 'weight',
         weightKg: insight.currentTopSet.weightKg,
         deltaKg: insight.previousBestWeight !== null ? insight.currentTopSet.weightKg - insight.previousBestWeight : null,
+        deltaReps: null,
       });
     } else if (insight.isRepPR && insight.currentTopSet) {
-      prs.push({ exerciseId: ex.exerciseId, kind: 'reps', weightKg: insight.currentTopSet.weightKg, deltaKg: null });
+      const w = insight.currentTopSet.weightKg;
+      const prevBest = Math.max(
+        0,
+        ...exerciseHistory(history, ex.exerciseId, session.id)
+          .flatMap((p) => completedSets(p.exercise))
+          .filter((s) => (s.weightKg ?? 0) === w)
+          .map((s) => s.reps ?? 0),
+      );
+      const best = Math.max(0, ...completedSets(ex).filter((s) => (s.weightKg ?? 0) === w).map((s) => s.reps ?? 0));
+      prs.push({ exerciseId: ex.exerciseId, kind: 'reps', weightKg: w, deltaKg: null, deltaReps: best - prevBest > 0 ? best - prevBest : null });
     }
   }
 

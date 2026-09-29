@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { BottomSheet, Button, Stepper } from '@/design-system';
 
@@ -15,9 +15,12 @@ export interface TargetConfig {
 
 export function TargetSheet({ config, onClose }: { config: TargetConfig | null; onClose: () => void }) {
   const [value, setValue] = useState(config?.value ?? 0);
-  useEffect(() => {
+  // Reset the draft whenever a different target is opened (adjust-during-render pattern).
+  const [openedFor, setOpenedFor] = useState(config);
+  if (config !== openedFor) {
+    setOpenedFor(config);
     if (config) setValue(config.value);
-  }, [config]);
+  }
   return (
     <BottomSheet
       visible={!!config}

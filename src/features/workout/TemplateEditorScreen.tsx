@@ -22,7 +22,7 @@ import { estimateTemplateMinutes, WEEKDAY_LETTER, WEEKDAY_SHORT, type TemplateEx
 import { useActiveWorkoutStore, useAppStore } from '@/store';
 
 import { startWorkout } from './actions';
-import { ExerciseImage } from './components/ExerciseImage';
+import { ExerciseArtwork } from '@/features/workout/artwork';
 
 /** Monday-first week for display. */
 const WEEK = [1, 2, 3, 4, 5, 6, 0];
@@ -145,7 +145,7 @@ function TemplateExerciseRow({ templateId, item, index, count }: { templateId: s
   return (
     <Card padding="md" style={styles.item}>
       <View style={styles.itemHeader}>
-        <ExerciseImage exercise={exercise} variant="thumb" />
+        <ExerciseArtwork exercise={exercise} variant="thumbnail" />
         <PressableScale
           onPress={() => router.push({ pathname: '/workout/exercise/[id]', params: { id: exercise.id } })}
           pressedScale={1}

@@ -42,6 +42,10 @@ export interface Journey extends Timestamps {
   gymDaysPerWeek: number;
   activities: ActivityKey[];
   status: JourneyStatus;
+  /** Optional supporting nutrition targets. Protein stays the primary target. */
+  calorieTargetKcal?: number | null;
+  carbsTargetG?: number | null;
+  fatTargetG?: number | null;
 }
 
 // ---------- Habits ----------
@@ -105,6 +109,45 @@ export interface WaterLog {
   date: ISODate;
   ml: number;
   loggedAt: ISODateTime;
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export type MealSource = 'manual' | 'photo_estimate';
+
+export interface MealItem {
+  id: ID;
+  name: string;
+  /** Free text portion, e.g. "150 g" or "1 cup". */
+  amount: string | null;
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+}
+
+/**
+ * A logged meal. Totals are what the user confirmed (possibly edited from an
+ * estimate) and are the source of truth for daily sums; items are detail.
+ */
+export interface Meal {
+  id: ID;
+  date: ISODate;
+  mealType: MealType;
+  name: string;
+  loggedAt: ISODateTime;
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  items: MealItem[];
+  /** Private file in the app sandbox. */
+  photoUri: string | null;
+  /** Object path in the private meal-photos bucket. */
+  photoStoragePath: string | null;
+  source: MealSource;
+  /** 0–1 confidence reported by the estimator, if any. */
+  estimateConfidence: number | null;
+  updatedAt: ISODateTime;
 }
 
 export interface DailyLog {

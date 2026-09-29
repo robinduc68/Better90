@@ -18,6 +18,7 @@ export function TodayScreen() {
   const name = useAppStore((s) => s.profile?.name ?? '');
   const model = useDayModel(today, today);
   const [refreshing, setRefreshing] = useState(false);
+  const [quickLog, setQuickLog] = useState(false);
 
   if (!model) return null;
   return (
@@ -35,8 +36,8 @@ export function TodayScreen() {
         />
       }
     >
-      <JourneyHero greeting={greeting()} name={name} progress={model.progress} />
-      <DayView model={model} />
+      <JourneyHero greeting={greeting()} name={name} progress={model.progress} onQuickLog={() => setQuickLog(true)} />
+      <DayView model={model} quickLogOpen={quickLog} onQuickLogClose={() => setQuickLog(false)} />
     </AppScreen>
   );
 }

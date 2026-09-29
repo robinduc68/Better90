@@ -34,7 +34,11 @@ export interface ColorTokens {
   tabBar: string;
   skeleton: string;
   skeletonHighlight: string;
+  /** Restrained semantic hues for icons, small indicators and charts — never large fills. */
+  tones: Record<Tone, { fg: string; bg: string }>;
 }
+
+export type Tone = 'brand' | 'water' | 'sleep' | 'activity' | 'positive' | 'neutral';
 
 const accent = '#B7F34A';
 const accentPressed = '#9FD82F';
@@ -67,6 +71,14 @@ export const darkColors: ColorTokens = {
   tabBar: '#0E1014',
   skeleton: '#171A20',
   skeletonHighlight: '#1F232A',
+  tones: {
+    brand: { fg: accent, bg: 'rgba(183,243,74,0.12)' },
+    water: { fg: '#6EA8FE', bg: 'rgba(110,168,254,0.13)' },
+    sleep: { fg: '#9B9BF5', bg: 'rgba(155,155,245,0.13)' },
+    activity: { fg: '#F5A45B', bg: 'rgba(245,164,91,0.13)' },
+    positive: { fg: '#54D68B', bg: 'rgba(84,214,139,0.12)' },
+    neutral: { fg: '#A7ADB7', bg: 'rgba(255,255,255,0.06)' },
+  },
 };
 
 export const lightColors: ColorTokens = {
@@ -97,6 +109,14 @@ export const lightColors: ColorTokens = {
   tabBar: '#FFFFFF',
   skeleton: '#ECEEF1',
   skeletonHighlight: '#F5F6F8',
+  tones: {
+    brand: { fg: '#4A7A06', bg: 'rgba(163,222,52,0.20)' },
+    water: { fg: '#2F7DE1', bg: 'rgba(47,125,225,0.10)' },
+    sleep: { fg: '#5B5BD6', bg: 'rgba(91,91,214,0.10)' },
+    activity: { fg: '#D9691C', bg: 'rgba(232,121,43,0.11)' },
+    positive: { fg: '#1F9D57', bg: 'rgba(31,157,87,0.10)' },
+    neutral: { fg: '#555C66', bg: '#F0F2F4' },
+  },
 };
 
 /** Fixed brand palette used by the share card, which is always rendered dark. */

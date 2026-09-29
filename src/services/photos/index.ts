@@ -7,9 +7,11 @@ import { Platform } from 'react-native';
  * They are never written to the shared photo library.
  */
 const PHOTO_DIR = 'progress-photos';
+const MEAL_DIR = 'meal-photos';
+export type PhotoKind = 'progress' | 'meal';
 
-function photoDir(): Directory {
-  const dir = new Directory(Paths.document, PHOTO_DIR);
+function photoDir(kind: PhotoKind = 'progress'): Directory {
+  const dir = new Directory(Paths.document, kind === 'meal' ? MEAL_DIR : PHOTO_DIR);
   if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
   return dir;
 }
@@ -18,12 +20,12 @@ export type PhotoSource = 'camera' | 'library';
 
 export type PickResult = { status: 'picked'; uri: string } | { status: 'cancelled' } | { status: 'denied'; source: PhotoSource };
 
-export async function pickPhoto(source: PhotoSource): Promise<PickResult> {
+export async function pickPhoto(source: PhotoSource, aspect: [number, number] = [3, 4]): Promise<PickResult> {
   const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: ['images'],
     quality: 0.8,
     allowsEditing: true,
-    aspect: [3, 4],
+    aspect,
     exif: false,
   };
   if (source === 'camera') {
@@ -39,9 +41,9 @@ export async function pickPhoto(source: PhotoSource): Promise<PickResult> {
 }
 
 /** Copies a picked image into private storage and returns its new URI. */
-export async function storePhotoPrivately(sourceUri: string, photoId: string): Promise<string> {
+export async function storePhotoPrivately(sourceUri: string, photoId: string, kind: PhotoKind = 'progress'): Promise<string> {
   if (Platform.OS === 'web') return sourceUri;
-  const dest = new File(photoDir(), `${photoId}.jpg`);
+  const dest = new File(photoDir(kind), `${photoId}.jpg`);
   if (dest.exists) dest.delete();
   await new File(sourceUri).copy(dest);
   return dest.uri;
@@ -63,6 +65,8 @@ export async function readPhotoBytes(uri: string): Promise<Uint8Array> {
 
 export function deleteAllLocalPhotos() {
   if (Platform.OS === 'web') return;
-  const dir = new Directory(Paths.document, PHOTO_DIR);
-  if (dir.exists) dir.delete();
+  for (const name of [PHOTO_DIR, MEAL_DIR]) {
+    const dir = new Directory(Paths.document, name);
+    if (dir.exists) dir.delete();
+  }
 }

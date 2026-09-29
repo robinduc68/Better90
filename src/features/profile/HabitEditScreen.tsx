@@ -151,7 +151,7 @@ export function HabitEditScreen() {
 
           <SectionHeader title="Special nights" trailing="Optional" />
           <Text variant="caption" color="muted" style={styles.hint}>
-            Tag steps that only happen on certain days. Tap a step's label above to assign a tag. Not skincare advice — use what works for you.
+            Tag steps that only happen on certain days. Tap a step’s label above to assign a tag. Not skincare advice — use what works for you.
           </Text>
           {SUGGESTED_TAGS.concat(tags.map((t) => t.tag).filter((t) => !SUGGESTED_TAGS.includes(t))).map((tag) => {
             const days = tags.find((t) => t.tag === tag)?.weekdays ?? [];

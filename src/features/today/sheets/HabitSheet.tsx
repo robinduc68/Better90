@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import { BottomSheet, Button, Checkmark, Chip, makeStyles, NumericInput, PressableScale, ProgressBar, QuickAddButton, Text } from '@/design-system';
@@ -87,7 +87,11 @@ function ValueSheet({ item, date, onClose }: { item: HabitItem; date: ISODate; o
   const unit = isDuration ? 'min' : (habit.unit ?? '');
   const presets = isDuration ? [15, 30, 60] : target >= 5000 ? [1000, 2500, 5000] : [1, 5, 10];
   const [exact, setExact] = useState<number | null>(current);
-  useEffect(() => setExact(current), [current]);
+  const [synced, setSynced] = useState(current);
+  if (current !== synced) {
+    setSynced(current);
+    setExact(current);
+  }
 
   const set = (v: number) => setHabitValue(habit, date, Math.max(0, Math.round(v)));
 

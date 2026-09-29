@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import { BottomSheet, Button, makeStyles, QuickAddButton, Stepper } from '@/design-system';
@@ -17,9 +17,12 @@ const PRESETS = [360, 420, 450, 480];
 export function SleepSheet({ visible, onClose, initial, target, onSave }: SleepSheetProps) {
   const styles = useStyles();
   const [value, setValue] = useState(initial ?? target);
-  useEffect(() => {
+  // Reset the draft each time the sheet opens.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) setValue(initial ?? target);
-  }, [visible, initial, target]);
+  }
 
   return (
     <BottomSheet

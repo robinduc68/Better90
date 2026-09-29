@@ -87,6 +87,7 @@ function AppShell() {
         <Stack.Screen name="workout/complete" options={{ presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="milestone/[day]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="share" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="share-today" options={{ presentation: 'modal' }} />
       </Stack>
       <OfflineBanner visible={offline} />
       <ToastHost />

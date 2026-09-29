@@ -1,7 +1,9 @@
 import { View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 
-import { Button, makeStyles, ProgressBar, Text } from '@/design-system';
+import { Timer } from 'lucide-react-native';
+
+import { Button, IconBadge, makeStyles, ProgressBar, Text } from '@/design-system';
 import { formatElapsed } from '@/domain';
 
 import { extendRest, skipRest } from './activeActions';
@@ -14,6 +16,7 @@ export function RestTimerBar({ timer }: { timer: RestTimerView }) {
   return (
     <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOutDown.duration(180)} style={styles.bar} accessibilityLiveRegion="polite">
       <View style={styles.row}>
+        <IconBadge icon={Timer} tone={timer.justFinished ? 'brand' : 'neutral'} size="sm" style={styles.icon} />
         <View style={styles.time} accessible accessibilityLabel={timer.justFinished ? 'Rest complete' : `Rest, ${timer.remainingSec} seconds left`}>
           <Text variant="label" color={timer.justFinished ? 'accent' : 'muted'}>
             {timer.justFinished ? 'Rest complete' : 'Rest'}
@@ -47,7 +50,8 @@ const useStyles = makeStyles((t) => ({
     borderColor: t.colors.borderStrong,
   },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  time: { gap: 0 },
+  icon: { marginRight: t.spacing.sm },
+  time: { flex: 1, gap: 0 },
   actions: { flexDirection: 'row', gap: t.spacing.xs, alignItems: 'center' },
   progress: { marginTop: t.spacing.xs },
 }));

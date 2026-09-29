@@ -21,5 +21,5 @@ export function RowGroup({ children }: { children: ReactNode }) {
 
 const useStyles = makeStyles((t) => ({
   group: { backgroundColor: t.colors.surface, borderRadius: t.radius.card, borderWidth: 1, borderColor: t.colors.border, overflow: 'hidden' },
-  divider: { height: 1, backgroundColor: t.colors.border, marginLeft: t.spacing.md },
+  divider: { height: 1, backgroundColor: t.colors.border, marginLeft: t.spacing.md + 36 + t.spacing.sm },
 }));

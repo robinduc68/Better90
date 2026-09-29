@@ -4,13 +4,13 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from '
 
 import { useReducedMotion } from '../../hooks';
 import { useTheme } from '../../theme';
-import { motion } from '../../tokens';
+import { motion, type Tone } from '../../tokens';
 
 interface ProgressBarProps {
   /** 0–1. Values above 1 are clamped visually. */
   value: number;
   height?: 2 | 4 | 6 | 8;
-  tone?: 'accent' | 'neutral' | 'subtle';
+  tone?: 'accent' | 'neutral' | 'subtle' | Exclude<Tone, 'brand' | 'neutral'>;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 }
@@ -29,7 +29,13 @@ export function ProgressBar({ value, height = 4, tone = 'accent', style, accessi
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
   const fillColor =
-    tone === 'accent' ? theme.colors.accent : tone === 'subtle' ? theme.colors.accentSubtle : theme.colors.textSecondary;
+    tone === 'accent'
+      ? theme.colors.accent
+      : tone === 'subtle'
+        ? theme.colors.accentSubtle
+        : tone === 'neutral'
+          ? theme.colors.textSecondary
+          : theme.colors.tones[tone].fg;
 
   return (
     <View

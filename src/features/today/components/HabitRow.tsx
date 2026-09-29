@@ -1,9 +1,10 @@
 import { View } from 'react-native';
 
-import { Checkmark, Chip, makeStyles, PressableScale, ProgressRing, Text } from '@/design-system';
+import { Checkmark, Chip, IconBadge, makeStyles, PressableScale, ProgressRing, Text } from '@/design-system';
 import { habitValueLabel } from '@/domain';
 
 import type { HabitItem } from '../useDayModel';
+import { habitVisual } from '../visuals';
 
 interface HabitRowProps {
   item: HabitItem;
@@ -31,6 +32,7 @@ export function HabitRow({ item, onToggle, onOpen }: HabitRowProps) {
     : habitValueLabel(habit, log);
 
   const rowPress = isBoolean && steps.length === 0 ? onToggle : onOpen;
+  const visual = habitVisual(habit);
 
   return (
     <View style={styles.row}>
@@ -44,6 +46,7 @@ export function HabitRow({ item, onToggle, onOpen }: HabitRowProps) {
         accessibilityLabel={`${habit.name}, ${subtitle}${done ? ', complete' : ''}`}
         accessibilityHint={isBoolean && steps.length === 0 ? 'Double tap to toggle' : 'Opens details'}
       >
+        <IconBadge icon={visual.icon} tone={visual.tone} />
         <View style={styles.body}>
           <Text variant="bodyMedium" numberOfLines={1}>
             {habit.name}
@@ -74,7 +77,7 @@ export function HabitRow({ item, onToggle, onOpen }: HabitRowProps) {
           {done ? (
             <Checkmark checked />
           ) : (
-            <ProgressRing value={progress} size={28} strokeWidth={3} />
+            <ProgressRing value={progress} size={28} strokeWidth={3} accessibilityLabel={`${Math.round(progress * 100)}%`} />
           )}
         </PressableScale>
       )}
@@ -84,8 +87,8 @@ export function HabitRow({ item, onToggle, onOpen }: HabitRowProps) {
 
 const useStyles = makeStyles((t) => ({
   row: { flexDirection: 'row', alignItems: 'center', minHeight: t.layout.rowHeight },
-  main: { flex: 1, minHeight: t.layout.rowHeight, justifyContent: 'center', paddingLeft: t.spacing.md, paddingVertical: t.spacing.xs },
-  body: { gap: 3 },
+  main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, minHeight: t.layout.rowHeight, paddingLeft: t.spacing.md, paddingVertical: t.spacing.xs },
+  body: { flex: 1, gap: 3 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs, flexWrap: 'wrap' },
   trailing: { width: 60, minHeight: t.layout.rowHeight, alignItems: 'center', justifyContent: 'center' },
 }));

@@ -8,6 +8,7 @@ import {
   journeyProgress,
   sessionVolume,
   strengthGain,
+  strengthSeries,
   type BodyMeasurement,
   type ISODate,
 } from '@/domain';
@@ -55,7 +56,8 @@ export function useProgressModel(today: ISODate) {
     const done = completedSessions(sessions);
     const strength = EXERCISES.map((e) => ({ exercise: e, gain: strengthGain(sessions, e.id) }))
       .filter((x): x is { exercise: (typeof EXERCISES)[number]; gain: NonNullable<ReturnType<typeof strengthGain>> } => x.gain !== null)
-      .sort((a, b) => b.gain.deltaKg - a.gain.deltaKg);
+      .sort((a, b) => b.gain.deltaKg / (b.gain.first || 1) - a.gain.deltaKg / (a.gain.first || 1))
+      .map((x) => ({ ...x, series: strengthSeries(sessions, x.exercise.id).map((p) => p.topWeightKg) }));
     const checkpoints = checkpointsFor(journey.durationDays).map((day) => {
       const date = dateForDay(journey, day);
       const logged = measurements.some((m) => m.date >= date && m.date <= dateForDay(journey, day + 3));

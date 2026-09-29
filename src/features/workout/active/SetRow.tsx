@@ -30,6 +30,7 @@ export const SetRow = memo(function SetRow({ index, set, bodyweight, onChange, o
         onChangeValue={(v) => onChange({ weightKg: v })}
         align="center"
         size="md"
+        tone="raised"
         placeholder={bodyweight ? 'BW' : '—'}
         style={styles.input}
         accessibilityLabel={`Set ${n} weight in kilograms`}
@@ -41,6 +42,7 @@ export const SetRow = memo(function SetRow({ index, set, bodyweight, onChange, o
         decimals={false}
         align="center"
         size="md"
+        tone="raised"
         placeholder="—"
         style={styles.input}
         accessibilityLabel={`Set ${n} reps`}
@@ -73,7 +75,9 @@ export function SetHeader() {
       <Text variant="label" color="muted" style={styles.hCol}>
         Reps
       </Text>
-      <View style={styles.hCheck} />
+      <Text variant="label" color="muted" style={styles.hCheck}>
+        Done
+      </Text>
     </View>
   );
 }
@@ -94,5 +98,5 @@ const useStyles = makeStyles((t) => ({
   header: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs, paddingHorizontal: t.spacing.xxs, marginBottom: t.spacing.xxs },
   hNumber: { width: 40, textAlign: 'center' },
   hCol: { flex: 1, textAlign: 'center' },
-  hCheck: { width: 56 },
+  hCheck: { width: 56, textAlign: 'center' },
 }));

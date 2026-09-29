@@ -14,6 +14,8 @@ export interface NumericInputProps extends Omit<TextInputProps, 'value' | 'onCha
   align?: 'left' | 'center';
   style?: StyleProp<ViewStyle>;
   invalid?: boolean;
+  /** 'raised' sits on tinted rows (e.g. set table) with a subtle border. */
+  tone?: 'sunken' | 'raised';
 }
 
 function toText(value: number | null): string {
@@ -34,7 +36,7 @@ export function parseNumeric(text: string, decimals: boolean): number | null {
  * Keeps its own text state so partial input like "37." is not lost.
  */
 export const NumericInput = forwardRef<TextInput, NumericInputProps>(function NumericInput(
-  { value, onChangeValue, unit, decimals = true, size = 'md', align = 'left', style, invalid, onFocus, onBlur, ...rest },
+  { value, onChangeValue, unit, decimals = true, size = 'md', align = 'left', style, invalid, tone = 'sunken', onFocus, onBlur, ...rest },
   ref,
 ) {
   const styles = useStyles();
@@ -51,6 +53,7 @@ export const NumericInput = forwardRef<TextInput, NumericInputProps>(function Nu
       style={[
         styles.field,
         size === 'lg' ? styles.lg : styles.md,
+        tone === 'raised' && styles.raised,
         focused && styles.focused,
         invalid && styles.invalid,
         align === 'center' && styles.center,
@@ -110,6 +113,7 @@ const useStyles = makeStyles((t) => ({
   md: { minHeight: 48 },
   lg: { minHeight: 60, paddingHorizontal: t.spacing.md },
   center: { justifyContent: 'center' },
+  raised: { backgroundColor: t.colors.surfaceElevated, borderColor: t.colors.border },
   focused: { borderColor: t.colors.accent, backgroundColor: t.colors.surfaceElevated },
   invalid: { borderColor: t.colors.danger },
   input: { flexGrow: 1, flexShrink: 1, minWidth: 24, color: t.colors.textPrimary, paddingVertical: t.spacing.xs },

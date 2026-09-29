@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowRight, BookOpen, History, Play, Plus } from 'lucide-react-native';
+import { ArrowRight, BookOpen, History, Plus, Timer } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   EmptyState,
+  IconBadge,
   IconButton,
   ListGroup,
   ListRow,
@@ -22,25 +23,23 @@ import {
   useTheme,
 } from '@/design-system';
 import {
+  addDays,
   completedSessions,
-  estimateTemplateMinutes,
   exerciseProgress,
   formatDuration,
   formatShortDate,
   formatVolume,
   sessionDurationSec,
   sessionVolume,
-  WEEKDAY_SHORT,
-  type WorkoutTemplate,
+  weekday,
 } from '@/domain';
+import { useTodayDate } from '@/hooks';
 import { useActiveWorkoutStore, useAppStore } from '@/store';
 
 import { startEmptyWorkout, startWorkout } from './actions';
-
-function scheduleLabel(t: WorkoutTemplate) {
-  if (t.weekdays.length === 0) return 'Unscheduled';
-  return [...t.weekdays].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => WEEKDAY_SHORT[d]).join(', ');
-}
+import { TemplateArtwork } from './artwork';
+import { ExerciseTemplateRow } from './components/ExerciseTemplateRow';
+import { WeekStrip, type WeekStripDay } from './components/WeekStrip';
 
 export function WorkoutHomeScreen() {
   const styles = useStyles();
@@ -49,8 +48,26 @@ export function WorkoutHomeScreen() {
   const sessions = useAppStore((s) => s.sessions);
   const createTemplate = useAppStore((s) => s.createTemplate);
   const active = useActiveWorkoutStore((s) => s.session);
+  const gymDays = useAppStore((s) => s.journey?.gymDaysPerWeek ?? 0);
+  const today = useTodayDate();
+  const todayWd = weekday(today);
   const list = useMemo(() => templates.filter((t) => !t.archivedAt), [templates]);
   const recent = useMemo(() => completedSessions(sessions).slice(0, 3), [sessions]);
+  const week: WeekStripDay[] = useMemo(() => {
+    const monday = addDays(today, -((todayWd + 6) % 7));
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(monday, i);
+      const wd = weekday(date);
+      return {
+        date,
+        isToday: date === today,
+        planned: list.some((t) => t.weekdays.includes(wd)),
+        done: sessions.some((x) => x.status === 'completed' && x.date === date),
+      };
+    });
+  }, [today, todayWd, list, sessions]);
+  const weekDone = week.filter((d) => d.done).length;
+  const weekTarget = Math.max(gymDays, week.filter((d) => d.planned).length, weekDone);
 
   const newTemplate = () => {
     const id = createTemplate({ name: 'New workout' });
@@ -75,10 +92,13 @@ export function WorkoutHomeScreen() {
       </View>
 
       {active ? (
-        <Card variant="elevated" onPress={() => router.push('/workout/active')} accessibilityHint="Returns to your workout">
-          <Text variant="label" color="accent">
-            In progress
-          </Text>
+        <Card variant="elevated">
+          <View style={styles.activeHead}>
+            <IconBadge icon={Timer} tone="brand" size="sm" />
+            <Text variant="label" color="accent">
+              In progress
+            </Text>
+          </View>
           <Text variant="h2" style={styles.activeTitle} numberOfLines={1}>
             {active.name}
           </Text>
@@ -90,6 +110,10 @@ export function WorkoutHomeScreen() {
         </Card>
       ) : null}
 
+      <View style={styles.week}>
+        <WeekStrip days={week} done={weekDone} target={weekTarget} />
+      </View>
+
       <SectionHeader title="My workouts" actionLabel={list.length ? 'New' : undefined} onAction={list.length ? newTemplate : undefined} />
       {list.length === 0 ? (
         <Card variant="flat">
@@ -97,37 +121,21 @@ export function WorkoutHomeScreen() {
         </Card>
       ) : (
         <View style={styles.templates}>
-          {list.map((t) => (
-            <Card key={t.id} padding="none" style={styles.templateCard}>
-              <PressableScale
-                onPress={() => router.push({ pathname: '/workout/template/[id]', params: { id: t.id } })}
-                pressedScale={1}
-                pressedOpacity={0.7}
-                style={styles.templateBody}
-                accessibilityLabel={`${t.name}, ${t.exercises.length} exercises, ${scheduleLabel(t)}`}
-                accessibilityHint="Edit workout"
-              >
-                <Text variant="bodySemibold" numberOfLines={1}>
-                  {t.name}
-                </Text>
-                <Text variant="caption" color="muted" numberOfLines={1}>
-                  {t.exercises.length} exercises · ~{estimateTemplateMinutes(t)} min · {scheduleLabel(t)}
-                </Text>
-              </PressableScale>
-              <IconButton
-                icon={Play}
-                variant="surface"
-                onPress={() => startWorkout(t)}
-                disabled={t.exercises.length === 0 || !!active}
-                accessibilityLabel={`Start ${t.name}`}
-                style={styles.play}
+          {[...list]
+            .sort((a, b) => Number(b.weekdays.includes(todayWd)) - Number(a.weekdays.includes(todayWd)))
+            .map((t) => (
+              <ExerciseTemplateRow
+                key={t.id}
+                template={t}
+                isToday={t.weekdays.includes(todayWd)}
+                onOpen={() => router.push({ pathname: '/workout/template/[id]', params: { id: t.id } })}
+                onStart={() => startWorkout(t)}
+                startDisabled={t.exercises.length === 0 || !!active}
               />
-            </Card>
-          ))}
+            ))}
         </View>
       )}
 
-      {!active ? <Button label="Start empty workout" variant="ghost" size="md" onPress={startEmptyWorkout} style={styles.empty} /> : null}
 
       {list.length < 2 ? (
         <>
@@ -139,7 +147,16 @@ export function WorkoutHomeScreen() {
             {STARTER_TEMPLATES.filter((s) => !list.some((t) => t.name === s.name)).map((s, i) => (
               <View key={s.name}>
                 {i > 0 ? <Divider inset={16} /> : null}
-                <ListRow title={s.name} subtitle={`${s.exercises.length} exercises`} onPress={() => addStarter(s)} trailing={<Plus size={18} color={colors.accentForeground} />} showChevron={false} accessibilityHint="Adds this workout to My workouts" />
+                <PressableScale onPress={() => addStarter(s)} pressedScale={1} pressedOpacity={0.7} style={styles.starter} accessibilityLabel={`Add ${s.name}`} accessibilityHint="Adds this workout to My workouts">
+                  <TemplateArtwork template={{ exercises: s.exercises.map(([exerciseId]) => ({ exerciseId })) }} size={44} />
+                  <View style={styles.flex}>
+                    <Text variant="bodyMedium">{s.name}</Text>
+                    <Text variant="caption" color="muted">
+                      {s.exercises.length} exercises
+                    </Text>
+                  </View>
+                  <Plus size={18} color={colors.accentForeground} />
+                </PressableScale>
               </View>
             ))}
           </ListGroup>
@@ -169,9 +186,15 @@ export function WorkoutHomeScreen() {
 
       <SectionHeader title="Explore" />
       <ListGroup>
-        <ListRow icon={BookOpen} title="Exercise library" subtitle="Instructions and your history per exercise" onPress={() => router.push('/workout/library')} />
+        <ListRow icon={BookOpen} title="Exercise library" subtitle="67 exercises · instructions and your history" onPress={() => router.push('/workout/library')} />
         <Divider inset={60} />
-        <ListRow icon={History} title="Workout history" onPress={() => router.push('/workout/history')} />
+        {!active ? (
+          <>
+            <ListRow icon={Plus} title="Start empty workout" subtitle="Add exercises as you go" onPress={startEmptyWorkout} />
+            <Divider inset={60} />
+          </>
+        ) : null}
+        <ListRow icon={History} title="Workout history" subtitle={recent.length ? `${completedSessions(sessions).length} sessions logged` : undefined} onPress={() => router.push('/workout/history')} />
       </ListGroup>
     </AppScreen>
   );
@@ -182,10 +205,10 @@ const useStyles = makeStyles((t) => ({
   activeTitle: { marginTop: t.spacing.xs },
   activeBar: { marginTop: t.spacing.md },
   activeCta: { marginTop: t.spacing.lg },
+  flex: { flex: 1 },
+  week: { marginTop: t.spacing.md },
+  activeHead: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs },
   templates: { gap: t.spacing.xs },
-  templateCard: { flexDirection: 'row', alignItems: 'center' },
-  templateBody: { flex: 1, paddingVertical: t.spacing.md, paddingLeft: t.spacing.md, gap: 3 },
-  play: { marginRight: t.spacing.sm },
-  empty: { marginTop: t.spacing.xs, alignSelf: 'flex-start' },
+  starter: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, minHeight: 64, paddingHorizontal: t.spacing.sm },
   starterHint: { marginBottom: t.spacing.sm, marginTop: -t.spacing.xs },
 }));

@@ -27,13 +27,15 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, service);
 
-  // Delete every object in the user's photo folder (paged).
-  for (;;) {
-    const { data: files, error } = await admin.storage.from('progress-photos').list(userId, { limit: 100 });
-    if (error) return new Response(`Storage error: ${error.message}`, { status: 500, headers: cors });
-    if (!files || files.length === 0) break;
-    const { error: removeError } = await admin.storage.from('progress-photos').remove(files.map((f) => `${userId}/${f.name}`));
-    if (removeError) return new Response(`Storage error: ${removeError.message}`, { status: 500, headers: cors });
+  // Delete every object in the user's private photo folders (paged).
+  for (const bucket of ['progress-photos', 'meal-photos']) {
+    for (;;) {
+      const { data: files, error } = await admin.storage.from(bucket).list(userId, { limit: 100 });
+      if (error) return new Response(`Storage error: ${error.message}`, { status: 500, headers: cors });
+      if (!files || files.length === 0) break;
+      const { error: removeError } = await admin.storage.from(bucket).remove(files.map((f) => `${userId}/${f.name}`));
+      if (removeError) return new Response(`Storage error: ${removeError.message}`, { status: 500, headers: cors });
+    }
   }
 
   const { error: deleteError } = await admin.auth.admin.deleteUser(userId);

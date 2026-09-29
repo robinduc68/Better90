@@ -1,6 +1,7 @@
 import { dateRange, weekday } from './dates';
 import { habitActiveOn, scoreDay, type DayInputs, type DayScore, type ScoringConfig, DEFAULT_SCORING } from './scoring';
-import type { DailyLog, HabitLog, Habit, ISODate, Journey, ProteinLog, WaterLog, WorkoutSession, WorkoutTemplate } from './types';
+import { nutritionTotals, type NutritionTotals } from './nutrition';
+import type { DailyLog, HabitLog, Habit, ISODate, Journey, Meal, ProteinLog, WaterLog, WorkoutSession, WorkoutTemplate } from './types';
 import { exerciseProgress } from './workout';
 
 /** Everything needed to evaluate journey days. */
@@ -13,6 +14,8 @@ export interface JourneyData {
   dailyLogs: DailyLog[];
   templates: WorkoutTemplate[];
   sessions: WorkoutSession[];
+  /** Optional for backward compatibility with callers created before meals existed. */
+  meals?: Meal[];
 }
 
 function groupBy<T>(items: T[], key: (t: T) => string): Map<string, T[]> {
@@ -29,6 +32,7 @@ function groupBy<T>(items: T[], key: (t: T) => string): Map<string, T[]> {
 /** Date-indexed view over journey data so range computations stay linear. */
 export class JourneyIndex {
   readonly protein: Map<ISODate, ProteinLog[]>;
+  readonly meals: Map<ISODate, Meal[]>;
   readonly water: Map<ISODate, WaterLog[]>;
   readonly habitLogs: Map<ISODate, HabitLog[]>;
   readonly daily: Map<ISODate, DailyLog>;
@@ -36,14 +40,20 @@ export class JourneyIndex {
 
   constructor(readonly data: JourneyData) {
     this.protein = groupBy(data.proteinLogs, (l) => l.date);
+    this.meals = groupBy(data.meals ?? [], (m) => m.date);
     this.water = groupBy(data.waterLogs, (l) => l.date);
     this.habitLogs = groupBy(data.habitLogs, (l) => l.date);
     this.daily = new Map(data.dailyLogs.map((d) => [d.date, d]));
     this.sessions = groupBy(data.sessions, (s) => s.date);
   }
 
+  /** Meals + quick protein logs — the only place daily nutrition is summed. */
+  nutritionOn(date: ISODate): NutritionTotals {
+    return nutritionTotals(date, this.protein.get(date) ?? [], this.meals.get(date) ?? []);
+  }
+
   proteinOn(date: ISODate): number {
-    return (this.protein.get(date) ?? []).reduce((s, l) => s + l.grams, 0);
+    return this.nutritionOn(date).proteinG;
   }
 
   waterOn(date: ISODate): number {

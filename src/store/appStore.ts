@@ -8,11 +8,12 @@ import { DEFAULT_SETTINGS, emptyData } from './defaults';
 import { createBodyActions, type BodyActions } from './slices/bodySlice';
 import { createJourneyActions, type JourneyActions } from './slices/journeySlice';
 import { createLogActions, type LogActions } from './slices/logSlice';
+import { createMealActions, type MealActions } from './slices/mealSlice';
 import { createSyncActions, type SyncActions } from './slices/syncSlice';
 import { createWorkoutActions, type WorkoutActions } from './slices/workoutSlice';
 import type { AppData } from './types';
 
-export type AppState = AppData & JourneyActions & LogActions & WorkoutActions & BodyActions & SyncActions;
+export type AppState = AppData & JourneyActions & LogActions & MealActions & WorkoutActions & BodyActions & SyncActions;
 
 /**
  * Local-first data store. The device copy is the source of truth for the UI;
@@ -24,6 +25,7 @@ export const useAppStore = create<AppState>()(
       ...emptyData(nowISO()),
       ...createJourneyActions(set, get),
       ...createLogActions(set, get),
+      ...createMealActions(set, get),
       ...createWorkoutActions(set, get),
       ...createBodyActions(set, get),
       ...createSyncActions(set, get),
@@ -38,6 +40,7 @@ export const useAppStore = create<AppState>()(
         habits: s.habits,
         habitLogs: s.habitLogs,
         proteinLogs: s.proteinLogs,
+        meals: s.meals,
         waterLogs: s.waterLogs,
         dailyLogs: s.dailyLogs,
         activityLogs: s.activityLogs,

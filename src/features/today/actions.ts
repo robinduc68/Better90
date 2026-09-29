@@ -1,5 +1,5 @@
 import { toast } from '@/design-system';
-import { formatLiters, type Habit, type ISODate } from '@/domain';
+import { formatLiters, nutritionTotals, type Habit, type ISODate } from '@/domain';
 import { analytics } from '@/services/analytics';
 import { haptics } from '@/services/haptics';
 import { useAppStore } from '@/store';
@@ -17,9 +17,10 @@ export function logProtein(date: ISODate, grams: number) {
   if (!Number.isFinite(grams) || grams <= 0) return;
   const store = useAppStore.getState();
   const id = store.addProtein(date, grams);
+  haptics.tick();
   analytics.track('protein_logged', { grams });
   const s = useAppStore.getState();
-  const total = totalOn(s.proteinLogs, date, (l) => l.grams);
+  const total = nutritionTotals(date, s.proteinLogs, s.meals).proteinG;
   const target = s.journey?.proteinTargetG ?? 0;
   toast.show(`Protein +${grams}g · ${total} / ${target}g`, { actionLabel: 'Undo', onAction: () => useAppStore.getState().removeProteinLog(id) });
 }
@@ -33,7 +34,8 @@ export function logWater(date: ISODate, ml: number) {
   const total = totalOn(s.waterLogs, date, (l) => l.ml);
   const target = s.journey?.waterTargetMl ?? 0;
   const reached = total >= target && total - ml < target;
-  if (reached) haptics.tick();
+  if (reached) haptics.success();
+  else haptics.tick();
   toast.show(reached ? `Water target reached · ${formatLiters(total)} L` : `Water +${ml} ml · ${formatLiters(total)} / ${formatLiters(target)} L`, {
     actionLabel: 'Undo',
     onAction: () => useAppStore.getState().removeWaterLog(id),

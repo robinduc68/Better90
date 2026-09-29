@@ -7,6 +7,7 @@ import type {
   HabitLog,
   ID,
   Journey,
+  Meal,
   NotificationPreferences,
   Profile,
   ProgressPhoto,
@@ -33,6 +34,7 @@ export type SyncEntity =
   | 'user_habits'
   | 'habit_logs'
   | 'protein_logs'
+  | 'meals'
   | 'water_logs'
   | 'daily_logs'
   | 'activity_logs'
@@ -64,6 +66,7 @@ export interface AppData {
   habits: Habit[];
   habitLogs: HabitLog[];
   proteinLogs: ProteinLog[];
+  meals: Meal[];
   waterLogs: WaterLog[];
   dailyLogs: DailyLog[];
   activityLogs: ActivityLog[];

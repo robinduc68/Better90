@@ -7,7 +7,7 @@ import { AppHeader, AppScreen, Card, ChartCard, EmptyState, LineChart, makeStyle
 import { formatKg, formatShortDate, formatSignedKg, strengthSeries } from '@/domain';
 import { useAppStore } from '@/store';
 
-import { ExerciseImage } from './components/ExerciseImage';
+import { ExerciseArtwork } from '@/features/workout/artwork';
 import { formatSetList } from './format';
 
 export function ExerciseDetailScreen() {
@@ -31,7 +31,7 @@ export function ExerciseDetailScreen() {
 
   return (
     <AppScreen header={<AppHeader title={exercise.name} />} safeTop>
-      <ExerciseImage exercise={exercise} variant="hero" />
+      <ExerciseArtwork exercise={exercise} variant="detail" />
       <Text variant="h1" style={styles.title}>
         {exercise.name}
       </Text>

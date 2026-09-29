@@ -37,6 +37,7 @@ export function createSyncActions(set: SetState, get: GetState): SyncActions {
       add('user_habits', s.habits.map((h) => h.id));
       add('habit_logs', s.habitLogs.map((l) => l.id));
       add('protein_logs', s.proteinLogs.map((l) => l.id));
+      add('meals', s.meals.map((m) => m.id));
       add('water_logs', s.waterLogs.map((l) => l.id));
       add('daily_logs', s.dailyLogs.map((l) => l.id));
       add('activity_logs', s.activityLogs.map((l) => l.id));

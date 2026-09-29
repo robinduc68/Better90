@@ -79,7 +79,7 @@ export function JourneyScreen() {
         <Legend swatch="missed" label="Not logged" />
       </View>
       <Text variant="caption" color="muted" style={styles.note}>
-        A day counts toward your streak at {formatPercent(DEFAULT_SCORING.thresholds.streak)} or more. It doesn't need to be perfect.
+        A day counts toward your streak at {formatPercent(DEFAULT_SCORING.thresholds.streak)} or more. It doesn’t need to be perfect.
       </Text>
 
       <SectionHeader title="Weekly reports" />

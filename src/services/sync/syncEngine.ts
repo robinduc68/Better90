@@ -14,6 +14,7 @@ const ORDER: SyncEntity[] = [
   'user_habits',
   'habit_logs',
   'protein_logs',
+  'meals',
   'water_logs',
   'daily_logs',
   'activity_logs',
@@ -38,6 +39,8 @@ function resolve(state: AppState, entity: SyncEntity, id: string): object | null
       return state.habitLogs.find((x) => x.id === id) ?? null;
     case 'protein_logs':
       return state.proteinLogs.find((x) => x.id === id) ?? null;
+    case 'meals':
+      return state.meals.find((x) => x.id === id) ?? null;
     case 'water_logs':
       return state.waterLogs.find((x) => x.id === id) ?? null;
     case 'daily_logs':
@@ -56,6 +59,7 @@ function resolve(state: AppState, entity: SyncEntity, id: string): object | null
 }
 
 export const photoStoragePath = (userId: string, photoId: string) => `${userId}/${photoId}.jpg`;
+export const mealPhotoStoragePath = photoStoragePath;
 
 let running: Promise<void> | null = null;
 let retryAt = 0;
@@ -111,6 +115,15 @@ async function doFlush(force: boolean) {
       }
     }
 
+    for (const item of initial.outbox.filter((o) => o.entity === 'meals' && o.op === 'upsert')) {
+      const meal = useAppStore.getState().meals.find((m) => m.id === item.id);
+      if (meal && !meal.photoStoragePath && meal.photoUri) {
+        const path = mealPhotoStoragePath(userId, meal.id);
+        await remote.uploadPhoto(path, await readPhotoBytes(meal.photoUri), 'image/jpeg', 'meal-photos');
+        useAppStore.setState((s) => ({ meals: s.meals.map((m) => (m.id === meal.id ? { ...m, photoStoragePath: path } : m)) }));
+      }
+    }
+
     const outbox = useAppStore.getState().outbox;
     const byEntity = (op: OutboxItem['op']) => {
       const groups = new Map<SyncEntity, OutboxItem[]>();
@@ -126,6 +139,7 @@ async function doFlush(force: boolean) {
       await runGroup(items, async () => {
         await remote.remove(entity, items.map((i) => i.id), userId);
         if (entity === 'progress_photos') await remote.removePhotos(items.map((i) => photoStoragePath(userId, i.id)));
+        if (entity === 'meals') await remote.removePhotos(items.map((i) => mealPhotoStoragePath(userId, i.id)), 'meal-photos');
       });
     }
 

@@ -6,7 +6,7 @@ import { EQUIPMENT_LABEL, MUSCLE_GROUP_LABEL } from '@/data/exercises';
 import { Checkmark, makeStyles, PressableScale, Text, useTheme } from '@/design-system';
 import type { Exercise } from '@/domain';
 
-import { ExerciseImage } from './ExerciseImage';
+import { ExerciseArtwork } from '../artwork';
 
 interface ExerciseRowProps {
   exercise: Exercise;
@@ -29,7 +29,7 @@ export const ExerciseRow = memo(function ExerciseRow({ exercise, onPress, select
       accessibilityState={selectable ? { checked: selected } : undefined}
       accessibilityLabel={`${exercise.name}, ${meta}`}
     >
-      <ExerciseImage exercise={exercise} variant="thumb" />
+      <ExerciseArtwork exercise={exercise} variant="thumbnail" />
       <View style={styles.body}>
         <Text variant="bodyMedium" numberOfLines={1}>
           {exercise.name}

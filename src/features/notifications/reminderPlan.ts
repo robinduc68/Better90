@@ -11,6 +11,7 @@ export function buildReminderPlan(now: Date = new Date()): PlannedNotification[]
     habits: s.habits,
     habitLogs: s.habitLogs,
     proteinLogs: s.proteinLogs,
+    meals: s.meals,
     waterLogs: s.waterLogs,
     dailyLogs: s.dailyLogs,
     templates: s.templates,

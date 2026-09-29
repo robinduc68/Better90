@@ -9,3 +9,4 @@ export * from './types';
 export * from './weeklyReport';
 export * from './workout';
 export * from './notificationPlan';
+export * from './nutrition';

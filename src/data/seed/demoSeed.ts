@@ -12,6 +12,7 @@ import {
   type HabitLog,
   type ISODate,
   type Journey,
+  type Meal,
   type Profile,
   type ProteinLog,
   type SessionExercise,
@@ -85,6 +86,9 @@ export function generateDemoData(today: ISODate, newId: () => string, seed = 90)
     gymDaysPerWeek: 4,
     activities: ['football'],
     status: 'active',
+    calorieTargetKcal: 2300,
+    carbsTargetG: 260,
+    fatTargetG: 70,
     createdAt: created,
     updatedAt: created,
   };
@@ -213,6 +217,24 @@ export function generateDemoData(today: ISODate, newId: () => string, seed = 90)
 
   // ---- Daily logs ----
   const proteinLogs: ProteinLog[] = [];
+  const meals: Meal[] = [];
+  const meal = (date: ISODate, mealType: Meal['mealType'], name: string, min: number, kcal: number, p: number, c: number, f: number): Meal => ({
+    id: newId(),
+    date,
+    mealType,
+    name,
+    loggedAt: atClock(date, min).toISOString(),
+    calories: kcal,
+    proteinG: p,
+    carbsG: c,
+    fatG: f,
+    items: [],
+    photoUri: null,
+    photoStoragePath: null,
+    source: 'manual',
+    estimateConfidence: null,
+    updatedAt: atClock(date, min).toISOString(),
+  });
   const waterLogs: WaterLog[] = [];
   const dailyLogs: DailyLog[] = [];
   const habitLogs: HabitLog[] = [];
@@ -225,8 +247,16 @@ export function generateDemoData(today: ISODate, newId: () => string, seed = 90)
     const low = lowDays.has(day);
     const at = (min: number) => atClock(date, min).toISOString();
 
+    if (isToday) {
+      meals.push(meal(date, 'breakfast', 'Oats, berries & yogurt', 8 * 60 + 12, 502, 35, 56, 14));
+      meals.push(meal(date, 'lunch', 'Chicken rice bowl', 12 * 60 + 40, 640, 48, 71, 15));
+    } else if (day >= DEMO_DAY - 3) {
+      meals.push(meal(date, 'breakfast', 'Eggs & toast', 8 * 60, 480, 30, 40, 20));
+      meals.push(meal(date, 'dinner', 'Salmon, rice & greens', 19 * 60 + 15, 720, 45, 68, 26));
+    }
     const proteinTotal = isToday ? 108 : low ? 70 + Math.floor(rand() * 20) : rand() < 0.78 ? 130 + Math.floor(rand() * 20) : 100 + Math.floor(rand() * 25);
-    let remaining = proteinTotal;
+    // Meals already carry protein; quick logs top up the rest of the day's total.
+    let remaining = Math.max(0, proteinTotal - meals.filter((m) => m.date === date).reduce((a, m) => a + (m.proteinG ?? 0), 0));
     let t = 8 * 60;
     while (remaining > 0) {
       const g = Math.min(remaining, pick([20, 25, 30, 35, 40]));
@@ -283,6 +313,7 @@ export function generateDemoData(today: ISODate, newId: () => string, seed = 90)
     habits,
     habitLogs,
     proteinLogs,
+    meals,
     waterLogs,
     dailyLogs,
     activityLogs,

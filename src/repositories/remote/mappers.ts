@@ -1,5 +1,6 @@
 import type {
   Habit,
+  Meal,
   NotificationPreferences,
   Profile,
   ProgressPhoto,
@@ -179,6 +180,42 @@ export function sessionFromRows(s: Row, exercises: Row[], sets: Row[]): WorkoutS
   };
 }
 
+export function mealToRows(m: Meal, userId: string): { meal: Row; items: Row[] } {
+  return {
+    // photoUri is device-specific and never leaves the device.
+    meal: toRow(m, userId, ['items', 'photoUri']),
+    items: m.items.map((it, position) => ({
+      id: it.id,
+      user_id: userId,
+      meal_id: m.id,
+      position,
+      name: it.name,
+      amount: it.amount,
+      calories: it.calories,
+      protein_g: it.proteinG,
+      carbs_g: it.carbsG,
+      fat_g: it.fatG,
+    })),
+  };
+}
+
+export function mealFromRows(m: Row, items: Row[]): Meal {
+  const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  return {
+    ...fromRow<Omit<Meal, 'items' | 'photoUri'>>(m),
+    calories: n(m.calories),
+    proteinG: n(m.protein_g),
+    carbsG: n(m.carbs_g),
+    fatG: n(m.fat_g),
+    estimateConfidence: n(m.estimate_confidence),
+    photoUri: null,
+    items: items
+      .filter((i) => i.meal_id === m.id)
+      .sort((a, b) => Number(a.position) - Number(b.position))
+      .map((i) => ({ id: String(i.id), name: String(i.name), amount: (i.amount as string | null) ?? null, calories: n(i.calories), proteinG: n(i.protein_g), carbsG: n(i.carbs_g), fatG: n(i.fat_g) })),
+  };
+}
+
 export function photoToRow(p: ProgressPhoto, userId: string): Row {
   // localUri is device-specific and never leaves the device.
   return toRow(p, userId, ['localUri']);
@@ -205,5 +242,5 @@ export function coerceNumbers<T extends object>(entity: SyncEntity, record: T): 
 }
 
 export type RemoteSnapshot = Partial<Pick<AppData,
-  'profile' | 'journey' | 'habits' | 'habitLogs' | 'proteinLogs' | 'waterLogs' | 'dailyLogs' | 'activityLogs' |
+  'profile' | 'journey' | 'habits' | 'habitLogs' | 'proteinLogs' | 'meals' | 'waterLogs' | 'dailyLogs' | 'activityLogs' |
   'templates' | 'sessions' | 'measurements' | 'photos' | 'notificationPrefs'>>;

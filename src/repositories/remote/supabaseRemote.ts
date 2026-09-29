@@ -5,6 +5,7 @@ import type {
   BodyMeasurement,
   DailyLog,
   HabitLog,
+  Meal,
   Journey,
   ProgressPhoto,
   ProteinLog,
@@ -18,6 +19,8 @@ import {
   coerceNumbers,
   fromRow,
   habitFromRow,
+  mealFromRows,
+  mealToRows,
   photoToRow,
   prefsFromRow,
   prefsToRow,
@@ -31,9 +34,9 @@ import {
   type RemoteSnapshot,
   type Row,
 } from './mappers';
-import type { RemoteRepository } from './RemoteRepository';
+import type { PhotoBucket, RemoteRepository } from './RemoteRepository';
 
-const PHOTO_BUCKET = 'progress-photos';
+const PHOTO_BUCKET: PhotoBucket = 'progress-photos';
 
 function check<T>(res: { data: T; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -78,6 +81,13 @@ export function createSupabaseRemote(db: SupabaseClient): RemoteRepository {
           await pruneChildren('workout_sets', 'session_exercise_id', exercises.map((e) => String(e.id)), sets.map((s) => String(s.id)));
           return upsertRows('workout_sets', sets);
         }
+        case 'meals': {
+          const mapped = (records as Meal[]).map((m) => mealToRows(m, userId));
+          await upsertRows('meals', mapped.map((m) => m.meal));
+          const items = mapped.flatMap((m) => m.items);
+          await pruneChildren('meal_items', 'meal_id', mapped.map((m) => String(m.meal.id)), items.map((i) => String(i.id)));
+          return upsertRows('meal_items', items);
+        }
         case 'progress_photos':
           return upsertRows('progress_photos', (records as ProgressPhoto[]).filter((p) => p.storagePath).map((p) => photoToRow(p, userId)));
         default:
@@ -98,12 +108,12 @@ export function createSupabaseRemote(db: SupabaseClient): RemoteRepository {
       const all = async (table: string) => check(await db.from(table).select('*').eq('user_id', userId)) as Row[];
       const [
         profiles, journeys, habits, habitLogs, protein, water, daily, activity,
-        templates, templateExercises, sessions, sessionExercises, sets, measurements, photos, prefs,
+        templates, templateExercises, sessions, sessionExercises, sets, measurements, photos, prefs, meals, mealItems,
       ] = await Promise.all([
         all('profiles'), all('journeys'), all('user_habits'), all('habit_logs'), all('protein_logs'), all('water_logs'),
         all('daily_logs'), all('activity_logs'), all('workout_templates'), all('workout_template_exercises'),
         all('workout_sessions'), all('workout_session_exercises'), all('workout_sets'), all('body_measurements'),
-        all('progress_photos'), all('notification_preferences'),
+        all('progress_photos'), all('notification_preferences'), all('meals'), all('meal_items'),
       ]);
       const activeJourney = journeys.find((j) => j.status === 'active') ?? journeys[0];
       const snapshot: RemoteSnapshot = {
@@ -112,6 +122,7 @@ export function createSupabaseRemote(db: SupabaseClient): RemoteRepository {
         habits: habits.map(habitFromRow),
         habitLogs: habitLogs.map((r) => coerceNumbers('habit_logs', fromRow<HabitLog>(r))),
         proteinLogs: protein.map((r) => coerceNumbers('protein_logs', fromRow<ProteinLog>(r))),
+        meals: meals.map((m) => mealFromRows(m, mealItems)),
         waterLogs: water.map((r) => fromRow<WaterLog>(r)),
         dailyLogs: daily.map((r) => fromRow<DailyLog>(r)),
         activityLogs: activity.map((r) => fromRow<ActivityLog>(r)),
@@ -124,19 +135,19 @@ export function createSupabaseRemote(db: SupabaseClient): RemoteRepository {
       return snapshot;
     },
 
-    async uploadPhoto(path, bytes, contentType) {
-      check(await db.storage.from(PHOTO_BUCKET).upload(path, bytes, { contentType, upsert: true }));
+    async uploadPhoto(path, bytes, contentType, bucket: PhotoBucket = PHOTO_BUCKET) {
+      check(await db.storage.from(bucket).upload(path, bytes, { contentType, upsert: true }));
     },
 
-    async signedPhotoUrl(path, expiresInSec) {
-      const data = check(await db.storage.from(PHOTO_BUCKET).createSignedUrl(path, expiresInSec));
+    async signedPhotoUrl(path, expiresInSec, bucket: PhotoBucket = PHOTO_BUCKET) {
+      const data = check(await db.storage.from(bucket).createSignedUrl(path, expiresInSec));
       if (!data?.signedUrl) throw new Error('Could not create a signed URL');
       return data.signedUrl;
     },
 
-    async removePhotos(paths) {
+    async removePhotos(paths, bucket: PhotoBucket = PHOTO_BUCKET) {
       if (paths.length === 0) return;
-      check(await db.storage.from(PHOTO_BUCKET).remove(paths));
+      check(await db.storage.from(bucket).remove(paths));
     },
 
     async deleteAccount() {

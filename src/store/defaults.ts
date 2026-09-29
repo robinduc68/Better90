@@ -28,6 +28,7 @@ export function emptyData(now: string): AppData {
     habits: [],
     habitLogs: [],
     proteinLogs: [],
+    meals: [],
     waterLogs: [],
     dailyLogs: [],
     activityLogs: [],

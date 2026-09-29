@@ -30,6 +30,7 @@ export function useReminderScheduler() {
         s.waterLogs !== prev.waterLogs ||
         s.habitLogs !== prev.habitLogs ||
         s.proteinLogs !== prev.proteinLogs ||
+        s.meals !== prev.meals ||
         s.sessions !== prev.sessions ||
         s.templates !== prev.templates ||
         s.notificationPrefs !== prev.notificationPrefs ||

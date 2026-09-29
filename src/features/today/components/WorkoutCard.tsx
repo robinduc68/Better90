@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { ArrowRight, Check, Dumbbell } from 'lucide-react-native';
-import { View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { Button, Card, makeStyles, ProgressBar, Text, useTheme } from '@/design-system';
+import { MUSCLE_GROUP_LABEL } from '@/data/exercises';
+import { Button, Card, Chip, IconBadge, makeStyles, ProgressBar, Text, useTheme } from '@/design-system';
 import {
   estimateTemplateMinutes,
   exerciseProgress,
@@ -14,6 +15,7 @@ import {
   type WorkoutSession,
 } from '@/domain';
 import { startWorkout } from '@/features/workout/actions';
+import { CroppedMuscleArt, templateMuscles } from '@/features/workout/artwork';
 
 interface WorkoutCardProps {
   isToday: boolean;
@@ -24,7 +26,28 @@ interface WorkoutCardProps {
   hasTemplates: boolean;
 }
 
-/** Today's workout gets more weight than simple habits: its own card, the screen's primary action. */
+/** Large cropped muscle artwork bleeding off the card's right edge (~40% of the card). */
+function HeroArt({ exercises }: { exercises: { exerciseId: string }[] }) {
+  const { width } = useWindowDimensions();
+  const cardW = Math.min(width, 560) - 40;
+  return <CroppedMuscleArt template={{ exercises }} width={Math.round(cardW * 0.44)} height={250} style={heroStyles.art} />;
+}
+
+const heroStyles = StyleSheet.create({
+  art: { position: 'absolute', right: 0, top: 0 },
+});
+
+function muscleLine(exercises: { exerciseId: string }[]) {
+  return muscleNames(exercises).join(' • ');
+}
+
+function muscleNames(exercises: { exerciseId: string }[]) {
+  return templateMuscles({ exercises })
+    .slice(0, 3)
+    .map((g) => MUSCLE_GROUP_LABEL[g]);
+}
+
+/** Today's workout: the strongest element on Today and its primary action. */
 export function WorkoutCard({ isToday, planned, scheduledToday, active, completed, hasTemplates }: WorkoutCardProps) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -33,19 +56,15 @@ export function WorkoutCard({ isToday, planned, scheduledToday, active, complete
     const p = exerciseProgress(active);
     return (
       <Card variant="elevated" style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text variant="label" color="accent">
-            In progress
-          </Text>
-          <Text variant="caption" color="muted" tabular>
-            {formatDuration(Math.round(sessionDurationSec(active) / 60))}
-          </Text>
-        </View>
-        <Text variant="h2" numberOfLines={1} style={styles.title}>
+        <HeroArt exercises={active.exercises} />
+        <Text variant="label" color="accent">
+          In progress · {formatDuration(Math.round(sessionDurationSec(active) / 60))}
+        </Text>
+        <Text variant="h2" numberOfLines={2} style={styles.title}>
           {active.name}
         </Text>
         <Text variant="small" color="secondary" tabular>
-          {p.done} / {p.total} exercises completed
+          {p.done} / {p.total} exercises
         </Text>
         <ProgressBar value={p.fraction} height={4} style={styles.bar} />
         <Button label="Continue" icon={ArrowRight} iconPosition="right" onPress={() => router.push('/workout/active')} style={styles.cta} />
@@ -55,18 +74,22 @@ export function WorkoutCard({ isToday, planned, scheduledToday, active, complete
 
   if (completed) {
     return (
-      <Card style={styles.card} onPress={() => router.push({ pathname: '/workout/session/[id]', params: { id: completed.id } })} accessibilityHint="Opens the workout summary">
-        <View style={styles.headerRow}>
+      <Card variant="elevated" style={styles.card} onPress={() => router.push({ pathname: '/workout/session/[id]', params: { id: completed.id } })} accessibilityHint="Opens the workout summary">
+        <HeroArt exercises={completed.exercises} />
+        <View style={styles.doneRow}>
+          <Check size={16} color={colors.accentForeground} strokeWidth={2.6} />
           <Text variant="label" color="accent">
             Workout complete
           </Text>
-          <Check size={18} color={colors.accentForeground} strokeWidth={2.5} />
         </View>
-        <Text variant="h2" numberOfLines={1} style={styles.title}>
+        <Text variant="h2" numberOfLines={2} style={styles.title}>
           {completed.name}
         </Text>
         <Text variant="small" color="secondary" tabular>
-          {formatDuration(Math.round(sessionDurationSec(completed) / 60))} · {formatVolume(sessionVolume(completed))} volume
+          {formatDuration(Math.round(sessionDurationSec(completed) / 60))} · {formatVolume(sessionVolume(completed))}
+        </Text>
+        <Text variant="caption" color="muted" style={styles.muscles}>
+          {muscleLine(completed.exercises)}
         </Text>
       </Card>
     );
@@ -74,7 +97,8 @@ export function WorkoutCard({ isToday, planned, scheduledToday, active, complete
 
   if (!isToday) {
     return (
-      <Card variant="flat" style={styles.card}>
+      <Card variant="flat" style={styles.rest}>
+        <IconBadge icon={Dumbbell} tone="neutral" size="sm" />
         <Text variant="bodyMedium" color="secondary">
           {scheduledToday ? 'Planned workout not logged.' : 'Rest day.'}
         </Text>
@@ -84,11 +108,9 @@ export function WorkoutCard({ isToday, planned, scheduledToday, active, complete
 
   if (!hasTemplates || !planned) {
     return (
-      <Card style={styles.card}>
-        <View style={styles.emptyIcon}>
-          <Dumbbell size={20} color={colors.textSecondary} />
-        </View>
-        <Text variant="label" color="muted" style={styles.emptyLabel}>
+      <Card variant="elevated" style={styles.card}>
+        <IconBadge icon={Dumbbell} tone="brand" />
+        <Text variant="h3" style={styles.emptyTitle}>
           No workout yet
         </Text>
         <Text variant="small" color="secondary">
@@ -103,20 +125,23 @@ export function WorkoutCard({ isToday, planned, scheduledToday, active, complete
   const isRestDay = !scheduledToday;
   return (
     <Card variant="elevated" style={styles.card}>
-      {isRestDay ? (
-        <Text variant="label" color="muted">
-          Rest day · Optional
-        </Text>
-      ) : (
-        <Text variant="label" color="accent">
-          Planned
-        </Text>
-      )}
-      <Text variant="h2" numberOfLines={1} style={styles.title}>
-        {isRestDay ? `Next up: ${t.name}` : t.name}
+      <HeroArt exercises={t.exercises} />
+      <Text variant="label" color={isRestDay ? 'muted' : 'accent'}>
+        {isRestDay ? 'Rest day · optional' : "Today's workout"}
       </Text>
-      <Text variant="small" color="secondary" tabular>
-        {t.exercises.length} exercises · ~{estimateTemplateMinutes(t)} min
+      <Text variant="h1" numberOfLines={2} style={styles.titleLarge}>
+        {t.name}
+      </Text>
+      <View style={styles.chips}>
+        {muscleNames(t.exercises).map((m) => (
+          <Chip key={m} label={m} tone="accent" />
+        ))}
+      </View>
+      <Text variant="bodyMedium" color="secondary" tabular style={styles.meta}>
+        {t.exercises.length} exercises
+      </Text>
+      <Text variant="small" color="muted" tabular>
+        ~{estimateTemplateMinutes(t)} min
       </Text>
       <Button
         label={isRestDay ? 'Start anyway' : 'Start workout'}
@@ -131,18 +156,15 @@ export function WorkoutCard({ isToday, planned, scheduledToday, active, complete
 }
 
 const useStyles = makeStyles((t) => ({
-  card: { gap: t.spacing.xxs },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { marginTop: t.spacing.xs },
-  bar: { marginTop: t.spacing.md },
+  card: { gap: t.spacing.xxs, overflow: 'hidden', minHeight: 180 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xxs, marginTop: t.spacing.xs, maxWidth: '58%' },
+  meta: { marginTop: t.spacing.md },
+  title: { marginTop: t.spacing.xs, maxWidth: '60%' },
+  titleLarge: { marginTop: t.spacing.xs, marginBottom: t.spacing.xxs, maxWidth: '60%' },
+  muscles: { marginTop: t.spacing.xs, letterSpacing: 0.8 },
+  bar: { marginTop: t.spacing.md, maxWidth: '58%' },
   cta: { marginTop: t.spacing.lg },
-  emptyIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: t.radius.md,
-    backgroundColor: t.colors.surfaceSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyLabel: { marginTop: t.spacing.sm },
+  doneRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xxs },
+  rest: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
+  emptyTitle: { marginTop: t.spacing.sm },
 }));

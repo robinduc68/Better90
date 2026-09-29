@@ -10,3 +10,4 @@ export * from './Layout';
 export * from './Progress';
 export * from './Sheet';
 export * from './Text';
+export * from './Visual';

@@ -1,6 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import Animated, { Easing, useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
+
+import { useReducedMotion } from '../../hooks';
 
 import { makeStyles, useTheme } from '../../theme';
 import { Text } from '../Text';
@@ -17,6 +20,8 @@ interface LineChartProps {
   formatValue: (v: number) => string;
   accessibilityLabel: string;
 }
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const PAD_X = 8;
 const PAD_Y = 14;
@@ -45,10 +50,22 @@ export function LineChart({ points, height = 140, formatValue, accessibilityLabe
     const xs = points.map((_, i) => PAD_X + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW));
     const ys = points.map((p) => PAD_Y + innerH - ((p.value - min) / (max - min)) * innerH);
     const d = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${ys[i]!.toFixed(1)}`).join(' ');
-    return { xs, ys, d, min, max };
+    let length = 0;
+    for (let i = 1; i < xs.length; i++) length += Math.hypot(xs[i]! - xs[i - 1]!, ys[i]! - ys[i - 1]!);
+    return { xs, ys, d, min, max, length: Math.max(1, length) };
   }, [points, width, height]);
 
   const active = selected !== null ? points[selected] : points[points.length - 1];
+
+  // Draw the line once on first entry; later data changes update instantly.
+  const reduceMotion = useReducedMotion();
+  const draw = useSharedValue(reduceMotion ? 1 : 0);
+  const ready = !!geometry;
+  useEffect(() => {
+    if (ready) draw.value = reduceMotion ? 1 : withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
+  }, [ready, draw, reduceMotion]);
+  const length = geometry?.length ?? 1;
+  const lineProps = useAnimatedProps(() => ({ strokeDashoffset: length * (1 - draw.value) }));
 
   const onPress = (e: GestureResponderEvent) => {
     if (!geometry) return;
@@ -85,7 +102,16 @@ export function LineChart({ points, height = 140, formatValue, accessibilityLabe
             {selected !== null ? (
               <Line x1={geometry.xs[selected]} x2={geometry.xs[selected]} y1={0} y2={height} stroke={theme.colors.borderStrong} strokeWidth={1} />
             ) : null}
-            <Path d={geometry.d} stroke={theme.colors.accent} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+            <AnimatedPath
+              d={geometry.d}
+              stroke={theme.scheme === 'light' ? theme.colors.accentForeground : theme.colors.accent}
+              strokeWidth={2.5}
+              fill="none"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              strokeDasharray={`${geometry.length} ${geometry.length}`}
+              animatedProps={lineProps}
+            />
             {geometry.xs.map((x, i) => {
               const isActive = selected === i || (selected === null && i === points.length - 1);
               return (
@@ -95,7 +121,7 @@ export function LineChart({ points, height = 140, formatValue, accessibilityLabe
                   cy={geometry.ys[i]}
                   r={isActive ? 4.5 : 2.5}
                   fill={isActive ? theme.colors.accent : theme.colors.surface}
-                  stroke={theme.colors.accent}
+                  stroke={theme.scheme === 'light' ? theme.colors.accentForeground : theme.colors.accent}
                   strokeWidth={1.5}
                 />
               );

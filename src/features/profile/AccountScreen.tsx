@@ -129,7 +129,7 @@ export function AccountScreen() {
       </Card>
       {sync.status === 'offline' ? (
         <Text variant="small" color="muted" style={styles.note}>
-          You're offline. Changes are saved on this device and will sync automatically.
+          You’re offline. Changes are saved on this device and will sync automatically.
         </Text>
       ) : null}
       {sync.status === 'error' && sync.lastError ? (

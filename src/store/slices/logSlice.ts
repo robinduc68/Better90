@@ -9,6 +9,7 @@ export interface LogActions {
   addWater: (date: ISODate, ml: number) => string;
   removeProteinLog: (id: string) => void;
   removeWaterLog: (id: string) => void;
+  updateWaterLog: (id: string, ml: number) => void;
   setSleep: (date: ISODate, minutes: number | null) => void;
   addActivity: (date: ISODate, activity: ActivityKey, minutes: number) => string;
   removeActivity: (id: string) => void;
@@ -59,6 +60,10 @@ export function createLogActions(set: SetState, get: GetState): LogActions {
     removeProteinLog: (id) => {
       set((s) => ({ proteinLogs: s.proteinLogs.filter((l) => l.id !== id) }));
       get().enqueue('protein_logs', id, 'delete');
+    },
+    updateWaterLog: (id, ml) => {
+      set((s) => ({ waterLogs: s.waterLogs.map((l) => (l.id === id ? { ...l, ml: Math.max(1, Math.round(ml)) } : l)) }));
+      get().enqueue('water_logs', id);
     },
     removeWaterLog: (id) => {
       set((s) => ({ waterLogs: s.waterLogs.filter((l) => l.id !== id) }));

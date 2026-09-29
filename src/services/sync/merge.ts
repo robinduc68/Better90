@@ -1,7 +1,7 @@
 import type { RemoteSnapshot } from '@/repositories/remote/mappers';
 import type { AppData } from '@/store/types';
 
-type Stamped = { id: string; updatedAt?: string; loggedAt?: string; createdAt?: string; localUri?: string | null };
+type Stamped = { id: string; updatedAt?: string; loggedAt?: string; createdAt?: string; localUri?: string | null; photoUri?: string | null };
 
 const stamp = (x: Stamped) => x.updatedAt ?? x.loggedAt ?? x.createdAt ?? '';
 
@@ -15,6 +15,7 @@ export function mergeById<T extends Stamped>(local: T[], remote: T[] | undefined
     if (!r || stamp(l) >= stamp(r)) map.set(l.id, l);
     // Device-only fields (a photo's private file) survive a newer remote copy.
     else if (l.localUri) map.set(l.id, { ...r, localUri: l.localUri });
+    else if (l.photoUri) map.set(l.id, { ...r, photoUri: l.photoUri });
   }
   return [...map.values()];
 }
@@ -33,6 +34,7 @@ export function mergeSnapshot(local: AppData, remote: RemoteSnapshot): Partial<A
     habits: mergeById(local.habits, remote.habits),
     habitLogs: mergeById(local.habitLogs, remote.habitLogs),
     proteinLogs: mergeById(local.proteinLogs, remote.proteinLogs),
+    meals: mergeById(local.meals, remote.meals),
     waterLogs: mergeById(local.waterLogs, remote.waterLogs),
     dailyLogs: mergeById(local.dailyLogs, remote.dailyLogs),
     activityLogs: mergeById(local.activityLogs, remote.activityLogs),

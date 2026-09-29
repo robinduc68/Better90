@@ -1,111 +1,50 @@
-import { X } from 'lucide-react-native';
-import { useState } from 'react';
+import { Activity, Camera, ChevronRight, Droplets, Scale, Utensils, type LucideIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
-import { BottomSheet, Button, IconButton, makeStyles, NumericInput, ProgressBar, QuickAddButton, Text } from '@/design-system';
+import { BottomSheet, IconBadge, makeStyles, PressableScale, Text, useTheme, type Tone } from '@/design-system';
 
-export interface LogEntry {
-  id: string;
-  label: string;
-  time: string;
-}
+export type QuickLogTarget = 'water' | 'protein' | 'weight' | 'activity' | 'photo';
 
-interface QuickLogSheetProps {
-  visible: boolean;
-  onClose: () => void;
-  title: string;
-  summary: string;
-  progress: number;
-  unit: string;
-  presets: number[];
-  formatPreset: (n: number) => string;
-  onAdd: (amount: number) => void;
-  entries: LogEntry[];
-  onRemove: (id: string) => void;
-  maxCustom: number;
-}
+const ITEMS: { key: QuickLogTarget; label: string; hint: string; icon: LucideIcon; tone: Tone }[] = [
+  { key: 'water', label: 'Water', hint: 'Add a glass or bottle', icon: Droplets, tone: 'water' },
+  { key: 'protein', label: 'Meal or protein', hint: 'Photo, manual entry or quick grams', icon: Utensils, tone: 'brand' },
+  { key: 'weight', label: 'Weight', hint: 'Body weight & measurements', icon: Scale, tone: 'neutral' },
+  { key: 'activity', label: 'Activity', hint: 'Football, running, cycling', icon: Activity, tone: 'activity' },
+  { key: 'photo', label: 'Progress photo', hint: 'Private to you', icon: Camera, tone: 'neutral' },
+];
 
-/** Shared sheet for protein and water: presets, a custom amount, and today's entries. */
-export function QuickLogSheet({
-  visible,
-  onClose,
-  title,
-  summary,
-  progress,
-  unit,
-  presets,
-  formatPreset,
-  onAdd,
-  entries,
-  onRemove,
-  maxCustom,
-}: QuickLogSheetProps) {
+/** One place for common logging: open → pick → log. */
+export function QuickLogSheet({ visible, onClose, onSelect }: { visible: boolean; onClose: () => void; onSelect: (t: QuickLogTarget) => void }) {
   const styles = useStyles();
-  const [custom, setCustom] = useState<number | null>(null);
-  const invalid = custom !== null && (custom <= 0 || custom > maxCustom);
-
-  const addCustom = () => {
-    if (custom === null || invalid) return;
-    onAdd(custom);
-    setCustom(null);
-  };
-
+  const { colors } = useTheme();
   return (
-    <BottomSheet visible={visible} onClose={onClose} title={title} subtitle={summary}>
-      <ProgressBar value={progress} height={4} />
-      <View style={styles.presets}>
-        {presets.map((p) => (
-          <QuickAddButton key={p} label={formatPreset(p)} onPress={() => onAdd(p)} style={styles.preset} />
+    <BottomSheet visible={visible} onClose={onClose} title="Quick log">
+      <View>
+        {ITEMS.map((i) => (
+          <PressableScale
+            key={i.key}
+            onPress={() => onSelect(i.key)}
+            pressedScale={1}
+            pressedOpacity={0.7}
+            style={styles.row}
+            accessibilityLabel={`${i.label}. ${i.hint}`}
+          >
+            <IconBadge icon={i.icon} tone={i.tone} />
+            <View style={styles.body}>
+              <Text variant="bodyMedium">{i.label}</Text>
+              <Text variant="caption" color="muted">
+                {i.hint}
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textMuted} />
+          </PressableScale>
         ))}
       </View>
-      <View style={styles.customRow}>
-        <NumericInput
-          value={custom}
-          onChangeValue={setCustom}
-          unit={unit}
-          decimals={false}
-          placeholder="Custom"
-          style={styles.customInput}
-          invalid={invalid}
-          returnKeyType="done"
-          onSubmitEditing={addCustom}
-          accessibilityLabel={`Custom amount in ${unit}`}
-        />
-        <Button label="Add" size="md" onPress={addCustom} disabled={custom === null || invalid} />
-      </View>
-      {invalid ? (
-        <Text variant="caption" color="danger">
-          Enter an amount up to {maxCustom} {unit}.
-        </Text>
-      ) : null}
-      {entries.length > 0 ? (
-        <View>
-          <Text variant="label" color="muted" style={styles.entriesLabel}>
-            Today
-          </Text>
-          {entries.map((e) => (
-            <View key={e.id} style={styles.entry}>
-              <Text variant="bodyMedium" tabular style={styles.entryLabel}>
-                {e.label}
-              </Text>
-              <Text variant="caption" color="muted" tabular>
-                {e.time}
-              </Text>
-              <IconButton icon={X} onPress={() => onRemove(e.id)} accessibilityLabel={`Remove ${e.label} at ${e.time}`} />
-            </View>
-          ))}
-        </View>
-      ) : null}
     </BottomSheet>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  presets: { flexDirection: 'row', gap: t.spacing.xs },
-  preset: { flex: 1, minHeight: 48 },
-  customRow: { flexDirection: 'row', gap: t.spacing.xs, alignItems: 'center' },
-  customInput: { flex: 1 },
-  entriesLabel: { marginBottom: t.spacing.xxs },
-  entry: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, minHeight: 48, borderBottomWidth: 1, borderBottomColor: t.colors.border },
-  entryLabel: { flex: 1 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, minHeight: 60 },
+  body: { flex: 1, gap: 2 },
 }));
